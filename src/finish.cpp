@@ -336,7 +336,7 @@ Func chroma_denoise(Func input, Expr width, Expr height, int num_passes) {
  * by Mertens et al.
  * http://ntp-0.cs.ucl.ac.uk/staff/j.kautz/publications/exposure_fusion.pdf
  */
-Func combine(Func im1, Func im2, Expr width, Expr height, Func dist) {
+Func combine(Func im1, Func im2, Expr width, Expr height, Func dist, std::string extra_identifier) {
 
     Func init_mask1("mask1_layer_0");
     Func init_mask2("mask2_layer_0");
@@ -355,8 +355,8 @@ Func combine(Func im1, Func im2, Expr width, Expr height, Func dist) {
     Func unblurred1 = im1_mirror;
     Func unblurred2 = im2_mirror;
 
-    Func blurred1 = gauss_7x7(im1_mirror, "img1_layer_0");
-    Func blurred2 = gauss_7x7(im2_mirror, "img2_layer_0");
+    Func blurred1 = gauss_7x7(im1_mirror, "img1_layer_0_" + extra_identifier);
+    Func blurred2 = gauss_7x7(im2_mirror, "img2_layer_0_" + extra_identifier);
 
     Func laplace1, laplace2, mask1, mask2;
 
@@ -398,13 +398,13 @@ Func combine(Func im1, Func im2, Expr width, Expr height, Func dist) {
 
         // current gauss layer of images
 
-        blurred1 = gauss_7x7(blurred1, "img1_layer_" + layer_str);
-        blurred2 = gauss_7x7(blurred2, "img1_layer_" + layer_str);
+        blurred1 = gauss_7x7(blurred1, "img1_blured1_layer_" + layer_str + std::to_string(layer) + extra_identifier);
+        blurred2 = gauss_7x7(blurred2, "img1_blured2_layer_" + layer_str + std::to_string(layer) + extra_identifier);
 
         // current gauss layer of masks
 
-        mask1 = gauss_7x7(mask1, "mask1_layer_" + layer_str);
-        mask2 = gauss_7x7(mask2, "mask2_layer_" + layer_str);
+        mask1 = gauss_7x7(mask1, "mask1_layer_" + layer_str + std::to_string(layer) + extra_identifier);
+        mask2 = gauss_7x7(mask2, "mask2_layer_" + layer_str + std::to_string(layer) + extra_identifier);
     }
 
     // add the highest pyramid layer (lowest frequency band)
@@ -493,7 +493,7 @@ Func tone_map(Func input, Expr width, Expr height, Expr comp, Expr gain) {
         Func dark_gamma = gamma_correct(dark);
         Func bright_gamma = gamma_correct(bright);
 
-        dark_gamma = combine(dark_gamma, bright_gamma, width, height, normal_dist);
+        dark_gamma = combine(dark_gamma, bright_gamma, width, height, normal_dist, std::to_string(pass));
 
         // invert gamma correction and apply gain
 
