@@ -82,10 +82,6 @@ public:
 
 int main(int argc, char* argv[]) {
     
-    if (argc < 5) {
-        std::cerr << "Usage: " << argv[0] << " [-w whiteLevel -b blackLevel -c comp -g gain (optional)] dir_path out_img raw_img1 raw_img2 [...]" << std::endl;
-        return 1;
-    }
 
     Compression c = 3.8f;
     Gain g = 1.1f;
