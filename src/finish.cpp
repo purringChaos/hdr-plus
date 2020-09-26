@@ -708,7 +708,7 @@ Halide::Func finish(Halide::Func input, Expr width, Expr height, Expr bp, Expr w
 
     Func sharpen_output = sharpen(contrast_output, sharpen_strength);
 
-    return u8bit_interleaved(contrast_output);
+    return u8bit_interleaved(sharpen_output);
 }
 
 Func finish(Func input, int width, int height, const BlackPoint bp, const WhitePoint wp, const WhiteBalance &wb, const CfaPattern cfa, Halide::Func ccm, const Compression c, const Gain g) {

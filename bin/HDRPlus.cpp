@@ -19,11 +19,16 @@ class HDRPlus {
 public:
     const Compression c;
     const Gain g;
-    
-    HDRPlus(Burst burst, const Compression  c, const Gain g)
+    int whiteLevel; 
+    int blackLevel; 
+
+    HDRPlus(Burst burst, const Compression  c, const Gain g, const int whiteLevel, const int blackLevel)
         : burst(burst)
         , c(c)
         , g(g)
+        , whiteLevel(whiteLevel)
+        , blackLevel(blackLevel)
+
     {
     }
     
@@ -33,8 +38,15 @@ public:
 
         Halide::Runtime::Buffer<uint8_t> output_img(3, width, height);
 
-        std::cerr << "Black point: " << burst.GetBlackLevel() << std::endl;
-        std::cerr << "White point: " << burst.GetWhiteLevel() << std::endl;
+        if (blackLevel == -1) {
+            blackLevel = burst.GetBlackLevel();
+        }
+        if (whiteLevel == -1) {
+            whiteLevel = burst.GetWhiteLevel();
+        }
+
+        std::cerr << "Black point: " << blackLevel << std::endl;
+        std::cerr << "White point: " << whiteLevel << std::endl;
         
         const WhiteBalance wb = burst.GetWhiteBalance();
         std::cerr << "RGGB: " << wb.r << " " << wb.g0 << " " << wb.g1 << " " << wb.b << std::endl;
@@ -46,7 +58,7 @@ public:
 
         const int cfa_pattern = static_cast<int>(burst.GetCfaPattern());
         auto ccm = burst.GetColorCorrectionMatrix();
-        hdrplus_pipeline(imgs, burst.GetBlackLevel(), burst.GetWhiteLevel(), wb.r, wb.g0, wb.g1, wb.b, cfa_pattern, ccm, c, g, output_img);
+        hdrplus_pipeline(imgs, blackLevel, whiteLevel, wb.r, wb.g0, wb.g1, wb.b, cfa_pattern, ccm, c, g, output_img);
         
         // transpose to account for interleaved layout
         output_img.transpose(0, 1);
@@ -71,12 +83,14 @@ public:
 int main(int argc, char* argv[]) {
     
     if (argc < 5) {
-        std::cerr << "Usage: " << argv[0] << " [-c comp -g gain (optional)] dir_path out_img raw_img1 raw_img2 [...]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " [-w whiteLevel -b blackLevel -c comp -g gain (optional)] dir_path out_img raw_img1 raw_img2 [...]" << std::endl;
         return 1;
     }
 
     Compression c = 3.8f;
     Gain g = 1.1f;
+    int blackLevel = -1;
+    int whiteLevel = -1;
 
     int i = 1;
 
@@ -89,6 +103,14 @@ int main(int argc, char* argv[]) {
             g = atof(argv[++i]);
             i++;
             continue;
+        } else if(argv[i][1] == 'w') {
+            whiteLevel = atof(argv[++i]);
+            i++;
+            continue;
+        } else if(argv[i][1] == 'b') {
+            blackLevel = atof(argv[++i]);
+            i++;
+            continue;
         } else {
             std::cerr << "Invalid flag '" << argv[i][1] << "'" << std::endl;
             return 1;
@@ -96,7 +118,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (argc - i < 4) {
-        std::cerr << "Usage: " << argv[0] << " [-c comp -g gain (optional)] dir_path out_img raw_img1 raw_img2 [...]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " [-w whiteLevel -b blackLevel -c comp -g gain (optional)] dir_path out_img raw_img1 raw_img2 [...]" << std::endl;
         return 1;
     }
 
@@ -110,7 +132,7 @@ int main(int argc, char* argv[]) {
 
     Burst burst(dir_path, in_names);
 
-    HDRPlus hdr_plus(burst, c, g);
+    HDRPlus hdr_plus(burst, c, g, whiteLevel, blackLevel);
 
     Halide::Runtime::Buffer<uint8_t> output = hdr_plus.process();
 
